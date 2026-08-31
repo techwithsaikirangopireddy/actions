@@ -57,29 +57,69 @@ Expected response:
 }
 ```
 
+The GitHub Actions workflow in `.github/workflows/java-ci.yml` packages the app, publishes it to Anypoint Exchange, and deploys `hello-mule-saikiran` to CloudHub 2.0.
+
+## Observability (Splunk and Grafana)
+
+Each `GET /hello` call logs the request and, when enabled, ships a JSON event to:
+
+- **Splunk** HTTP Event Collector
+- **Grafana Loki** (Grafana reads Loki)
+
+Exports are **off by default** so CloudHub deploy stays green without Splunk/Grafana accounts. They do not block `/hello` if an export fails.
+
+### Local Grafana + Loki
+
+From the repository root:
+
+```shell
+docker compose -f observability/docker-compose.yml up -d
+```
+
+- Grafana: http://localhost:3000 (user `admin` / password `admin`)
+- Loki: http://localhost:3100
+
+Enable Mule exports in `hello-mule/src/main/resources/application.properties`:
+
+```properties
+splunk.enabled=false
+loki.enabled=true
+loki.url=http://localhost:3100/loki/api/v1/push
+```
+
+Then call `GET /hello` and open the **hello-mule observability** dashboard in Grafana. Query: `{app="hello-mule"}`.
+
+### Local Splunk
+
+Splunk is heavy. Start it only if you have enough RAM:
+
+```shell
+docker compose -f observability/docker-compose.yml --profile splunk up -d
+```
+
+- Splunk UI: http://localhost:8000 (user `admin` / password `HelloMule123`)
+- HEC: `http://localhost:8088/services/collector/event` with token `hello-mule-local-hec`
+
+Set:
+
+```properties
+splunk.enabled=true
+splunk.hec.url=http://localhost:8088/services/collector/event
+splunk.hec.token=hello-mule-local-hec
+```
+
+### CloudHub 2.0
+
+CloudHub cannot reach `localhost`. Use Splunk Cloud HEC and a public Loki/Grafana Cloud URL, then set GitHub Actions env (or CloudHub properties):
+
+- `SPLUNK_ENABLED=true`
+- `SPLUNK_HEC_URL`
+- `SPLUNK_HEC_TOKEN`
+- `LOKI_ENABLED=true`
+- `LOKI_URL`
+
+There is also `GET /health` for a simple up-check.
+
 ## Runtime and Java
 
-This project targets Mule Runtime `4.12.2` and declares Java `17` compatibility in its Maven properties. The minimum Mule version in `mule-artifact.json` is `4.12.0`, so the application can run on the 4.12 runtime line.
-
-CloudHub 2.0 client credentials are intentionally not configured. Add deployment configuration later through secure GitHub Actions secrets and the appropriate Mule Maven Plugin deployment settings.
-
-## GitHub Actions and CloudHub 2.0
-
-The workflow in `.github/workflows/java-ci.yml` builds the Mule application for pull requests and pushes. It deploys to CloudHub 2.0 only for pushes to `main` or a manual workflow run. Pull requests do not deploy.
-
-Before deploying, create a GitHub environment named `cloudhub-production`. Add these environment **secrets**:
-
-- `ANYPOINT_CLIENT_ID`
-- `ANYPOINT_CLIENT_SECRET`
-
-Add these environment **variables**:
-
-- `ANYPOINT_URI` (usually `https://anypoint.mulesoft.com`)
-- `ANYPOINT_BUSINESS_GROUP_ID`
-- `ANYPOINT_ENVIRONMENT`
-- `ANYPOINT_TARGET`
-- `ANYPOINT_APPLICATION_NAME`
-- `ANYPOINT_REPLICAS` (for example, `1`)
-- `ANYPOINT_VCORES` (for example, `0.1`)
-
-The Connected App used by the secrets must have permission to deploy applications in the selected business group and environment. GitHub Actions passes these values to Maven at deployment time; they are not stored in the repository.
+This project targets Mule Runtime **4.6 LTS** and Java **17** on CloudHub 2.0.

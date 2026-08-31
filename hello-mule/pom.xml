@@ -18,7 +18,7 @@
 
     <artifactId>hello-mule</artifactId>
 
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 
     <packaging>mule-application</packaging>
 
@@ -116,6 +116,13 @@
         <java.version>
             17
         </java.version>
+
+        <splunk.enabled>false</splunk.enabled>
+        <splunk.hec.url>http://127.0.0.1:8088/services/collector/event</splunk.hec.url>
+        <splunk.hec.token></splunk.hec.token>
+        <splunk.index>main</splunk.index>
+        <loki.enabled>false</loki.enabled>
+        <loki.url>http://127.0.0.1:3100/loki/api/v1/push</loki.url>
 
     </properties>
 
@@ -352,6 +359,15 @@
 
                                 <properties>
                                     <http.port>8081</http.port>
+                                    <app.name>hello-mule</app.name>
+                                    <app.environment>sandbox</app.environment>
+                                    <splunk.enabled>${splunk.enabled}</splunk.enabled>
+                                    <splunk.hec.url>${splunk.hec.url}</splunk.hec.url>
+                                    <splunk.hec.token>${splunk.hec.token}</splunk.hec.token>
+                                    <splunk.index>${splunk.index}</splunk.index>
+                                    <splunk.sourcetype>hello-mule</splunk.sourcetype>
+                                    <loki.enabled>${loki.enabled}</loki.enabled>
+                                    <loki.url>${loki.url}</loki.url>
                                 </properties>
 
                                 <connectedAppClientId>

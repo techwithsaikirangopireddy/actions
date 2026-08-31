@@ -48,7 +48,7 @@ output application/json
 ---
 {
     message: "Hello from MuleSoft!",
-    application: "hello-mule12"    ,
+    application: "hello-mule",
     author: "Saikiran"
 }
                 ]]></ee:set-payload>
@@ -57,6 +57,33 @@ output application/json
 
         </ee:transform>
 
+        <logger level="INFO" message="hello-mule request #[attributes.requestPath default '/hello']" />
+
+        <async>
+            <flow-ref name="observability-publish-subflow" />
+        </async>
+
+    </flow>
+
+    <flow name="hello-mule-health-flow">
+        <http:listener
+                config-ref="HTTP_Listener_config"
+                path="/health"
+                allowedMethods="GET"/>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+    status: "UP",
+    application: p('app.name'),
+    environment: p('app.environment')
+}
+                ]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
     </flow>
 
 </mule>

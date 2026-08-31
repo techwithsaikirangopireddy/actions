@@ -78,7 +78,7 @@ jobs:
           ANYPOINT_VCORES: "0.1"
           ASSET_GROUP_ID: "c33b559a-6e86-4aea-8f57-9b28faeb2881"
           ASSET_ID: "hello-mule"
-          ASSET_VERSION: "1.0.5"
+          ASSET_VERSION: "1.0.6"
 
         run: |
           echo "Packaging hello-mule..."
@@ -120,4 +120,10 @@ jobs:
             -Danypoint.target="${ANYPOINT_TARGET}" \
             -Danypoint.applicationName="${ANYPOINT_APPLICATION_NAME}" \
             -Danypoint.replicas="${ANYPOINT_REPLICAS}" \
-            -Danypoint.vCores="${ANYPOINT_VCORES}"
+            -Danypoint.vCores="${ANYPOINT_VCORES}" \
+            -Dsplunk.enabled="${SPLUNK_ENABLED:-false}" \
+            -Dsplunk.hec.url="${SPLUNK_HEC_URL:-http://127.0.0.1:8088/services/collector/event}" \
+            -Dsplunk.hec.token="${SPLUNK_HEC_TOKEN:-}" \
+            -Dsplunk.index="${SPLUNK_INDEX:-main}" \
+            -Dloki.enabled="${LOKI_ENABLED:-false}" \
+            -Dloki.url="${LOKI_URL:-http://127.0.0.1:3100/loki/api/v1/push}"

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core
+        http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http
+        http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/ee/core
+        http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <http:request-config name="Splunk_HEC_Request">
+        <http:request-connection host="localhost" port="8088" />
+    </http:request-config>
+
+    <http:request-config name="Loki_Request">
+        <http:request-connection host="localhost" port="3100" />
+    </http:request-config>
+
+    <sub-flow name="observability-publish-subflow">
+        <try>
+            <choice>
+                <when expression="#[p('splunk.enabled') == 'true']">
+                    <flow-ref name="observability-splunk-subflow" />
+                </when>
+            </choice>
+            <choice>
+                <when expression="#[p('loki.enabled') == 'true']">
+                    <flow-ref name="observability-loki-subflow" />
+                </when>
+            </choice>
+            <error-handler>
+                <on-error-continue>
+                    <logger level="WARN" message="Observability export skipped: #[error.description]" />
+                </on-error-continue>
+            </error-handler>
+        </try>
+    </sub-flow>
+
+    <sub-flow name="observability-splunk-subflow">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+  event: {
+    app: p('app.name'),
+    environment: p('app.environment'),
+    path: attributes.requestPath default "/hello",
+    method: attributes.method default "GET",
+    status: "success",
+    payload: payload
+  },
+  sourcetype: p('splunk.sourcetype'),
+  index: p('splunk.index'),
+  source: p('app.name')
+}
+                ]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <http:request method="POST" config-ref="Splunk_HEC_Request" url="${splunk.hec.url}">
+            <http:headers><![CDATA[#[
+                {
+                    "Authorization": "Splunk " ++ p('splunk.hec.token'),
+                    "Content-Type": "application/json"
+                }
+            ]]]></http:headers>
+        </http:request>
+    </sub-flow>
+
+    <sub-flow name="observability-loki-subflow">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[
+%dw 2.0
+output application/json
+var ts = ((now() as Number {unit: "milliseconds"}) * 1000000) as String
+var line = write({
+  app: p('app.name'),
+  environment: p('app.environment'),
+  path: attributes.requestPath default "/hello",
+  method: attributes.method default "GET",
+  status: "success",
+  payload: payload
+}, "application/json")
+---
+{
+  streams: [{
+    stream: {
+      app: p('app.name'),
+      env: p('app.environment')
+    },
+    values: [[ts, line]]
+  }]
+}
+                ]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <http:request method="POST" config-ref="Loki_Request" url="${loki.url}">
+            <http:headers><![CDATA[#[
+                {
+                    "Content-Type": "application/json"
+                }
+            ]]]></http:headers>
+        </http:request>
+    </sub-flow>
+
+</mule>
