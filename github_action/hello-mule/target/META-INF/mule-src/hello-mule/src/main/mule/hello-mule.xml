@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core
+        http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+
+        http://www.mulesoft.org/schema/mule/http
+        http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+
+        http://www.mulesoft.org/schema/mule/ee/core
+        http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <!-- ====================================================== -->
+    <!-- HTTP LISTENER CONFIGURATION -->
+    <!-- ====================================================== -->
+
+    <http:listener-config name="HTTP_Listener_config">
+
+        <http:listener-connection
+                host="0.0.0.0"
+                port="${http.port}"/>
+
+    </http:listener-config>
+
+
+    <!-- ====================================================== -->
+    <!-- HELLO API -->
+    <!-- ====================================================== -->
+
+    <flow name="hello-mule-flow">
+
+        <http:listener
+                config-ref="HTTP_Listener_config"
+                path="/hello"
+                allowedMethods="GET"/>
+
+        <ee:transform>
+
+            <ee:message>
+
+                <ee:set-payload><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+    message: "Hello from MuleSoft!",
+    application: "hello-mule12"    ,
+    author: "Saikiran"
+}
+                ]]></ee:set-payload>
+
+            </ee:message>
+
+        </ee:transform>
+
+    </flow>
+
+</mule>
