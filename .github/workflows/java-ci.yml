@@ -35,7 +35,7 @@ jobs:
           mvn --batch-mode --no-transfer-progress clean package
 
       # 4. Upload Mule application JAR
-      - name: Upload Mule application
+      - name: Upload Mule app
         uses: actions/upload-artifact@v4
         with:
           name: hello-mule-package
