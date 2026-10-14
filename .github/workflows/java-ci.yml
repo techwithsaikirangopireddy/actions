@@ -39,8 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hello-mule-package
-          path: hello-mule/target/*-mule-application.jar
-
+          path: hello-mule/target/*-mule-application.j
 
   # ==========================================================
   # DEPLOY JOB
@@ -53,7 +52,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-
+      # checkout out to the code 
       - name: Checkout code
         uses: actions/checkout@v5
 
