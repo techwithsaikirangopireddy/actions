@@ -42,6 +42,14 @@ jobs:
           path: hello-mule/target/*-mule-application.jar
 
 
+
+     # 5.print the list of files in the target directory
+      - name: List files in target directory
+        working-directory: hello-mule
+        run: |
+          echo "Listing files in target directory:"
+          ls -la target || true
+          
   # ==========================================================
   # DEPLOY JOB
   # ==========================================================
