@@ -61,7 +61,11 @@ jobs:
     timeout-minutes: 20
 
     steps:
+<<<<<<< HEAD
 
+=======
+      # checkout to code
+>>>>>>> 1fb8110 (cherry pick testing)
       - name: Checkout code
         uses: actions/checkout@v5
 
